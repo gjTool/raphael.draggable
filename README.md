@@ -1,5 +1,5 @@
 ﻿## raphael.draggable.js
-- raphael.js扩展拖拽功能。画布整体拖动，还原，以及单独元素拖动
+- raphael.js扩展拖拽功能。画布整体拖动，缩放，还原，以及单独元素拖动
 使用方式：
 ```
 <div id="container"></div>
@@ -24,6 +24,7 @@
         })
         //单独元素拖动
         circle.draggable()
+        paper.zoomEnable()
     };
 </script>
 ```
