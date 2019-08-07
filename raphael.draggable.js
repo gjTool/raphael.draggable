@@ -26,8 +26,8 @@
         scale.h = oDiv.height.baseVal.value,
         scale.x = 0;
         scale.y = 0;
-        scale.vari= 0.02, 
-        scale.zoom= 1
+        scale.vari= 0.02;
+        scale.zoom= 1;
         oDiv.style.left = '0';
         oDiv.style.top = '0';
         this._scale = scale;
