@@ -1,4 +1,59 @@
 (function (R) {
+    R.prototype.reset = function () {
+        var oDiv = this.canvas, scale = this._scale;
+        scale.w = oDiv.width.baseVal.value;
+        scale.h = oDiv.height.baseVal.value;
+        scale.x = 0;
+        scale.y = 0;
+        oDiv.style.left = '0';
+        oDiv.style.top = '0';
+        scale.vari = 0.02;
+        scale.zoom = 1;
+        this._scale = scale;
+        this.setViewBox(scale.x, scale.y, scale.w, scale.h, false);
+    }
+    R.prototype._scale = { vari: 0.1, zoom: 1, w: 0, h: 0, x: 0, y: 0,maxZoom:6,minZoom:0.5 };
+    R.prototype.zoomEnable = function () {
+        var oDiv = this.canvas, scale = this._scale, that = this;
+        scale.w = oDiv.width.baseVal.value;
+        scale.h = oDiv.height.baseVal.value;
+        var $svgTest = oDiv.parentNode;
+       $svgTest.onmousewheel = function (e) {
+            var cw = oDiv.width.baseVal.value, ch = oDiv.height.baseVal.value;
+            var w = scale.w, h = scale.h, x = scale.x, y = scale.y;
+            var vari = scale.vari - 0;
+            e = e || window.event;
+            var cx = e.clientX - offset($svgTest).left - parseFloat(oDiv.style.left) ;
+            var cy = e.clientY - offset($svgTest).top - parseFloat(oDiv.style.top);
+            var dtl = e.wheelDelta ?  e.wheelDelta : e.detail;
+            var px, py, nx, ny;
+            var posv = 1 / scale.zoom;
+            px = cx * posv;
+            py = cy * posv;
+            if (dtl < 0) {
+                if (scale.zoom <= scale.minZoom) return;
+                scale.zoom -= vari;
+            } else {
+                if (scale.zoom >= scale.maxZoom) return;
+                scale.zoom += vari;
+            }
+            posv = 1 / scale.zoom;
+            w = cw * posv;
+            h = ch * posv;
+            nx = cx * posv;
+            ny = cy * posv;
+            var dx = px - nx;
+            var dy = py - ny;
+            x += dx;
+            y += dy;
+            scale.w = w;
+            scale.h = h;
+            scale.x = x;
+            scale.y = y;
+            that.setViewBox(scale.x, scale.y, scale.w, scale.h, false);
+            that._scale = scale
+        }
+    }
     R.prototype.draggable = function (flag) {
         var oDiv = this.canvas;
         var that = this;
@@ -18,85 +73,6 @@
             if (flag !== true && flag !== false) {
                 drag(e, oDiv, that)
             }
-        }
-    }
-    R.prototype.reset = function () {
-        var oDiv = this.canvas, scale = this._scale;
-        scale.w = oDiv.width.baseVal.value;
-        scale.h = oDiv.height.baseVal.value;
-        scale.x = 0;
-        scale.y = 0;
-        scale.vari = 0.02;
-        scale.zoom = 1;
-        oDiv.style.left = '0';
-        oDiv.style.top = '0';
-        this._scale = scale;
-        this.setViewBox(scale.x, scale.y, scale.w, scale.h, false);
-    }
-    function drag(e, oDiv, that) {
-        var disX = e.offsetX;
-        var disY = e.offsetY;
-        document.onmousemove = function (evt) {
-            var e = evt || window.event;
-            var left = e.pageX - disX;
-            var top = e.pageY - disY;
-            if (that._draging) {
-                return
-            }
-            oDiv.style.left = left + 'px';
-            oDiv.style.top = top + 'px';
-        }
-        document.onmouseup = function () {
-            document.onmousemove = null;
-        }
-        document.ondragstart = function () {
-            return false;
-        }
-    }
-    R.prototype._draging = false;
-    R.prototype._scale = { vari: .02, zoom: 1, w: 0, h: 0, x: 0, y: 0 };
-    R.prototype.zoomEnable = function () {
-        var oDiv = this.canvas, scale = this._scale, that = this;
-        scale.w = oDiv.width.baseVal.value;
-        scale.h = oDiv.height.baseVal.value;
-        oDiv.onmousewheel = function (e) {
-            var cw = 640, ch = 720;
-            var w = scale.w, h = scale.h, x = scale.x, y = scale.y;
-            var vari = scale.vari - 0;
-            e = e || window.event;
-            var cx = e.clientX;
-            var cy = e.clientY;
-            var dtl;
-            if (e.wheelDelta) {
-                dtl = e.wheelDelta;
-            } else if (e.detail) {
-                dtl = e.detail;
-            }
-            var px, py, nx, ny;
-            var posv = 1 / scale.zoom;
-            px = cx * posv;
-            py = cy * posv;
-            if (dtl < 0) {
-                if (scale.zoom < 0.1) return;
-                scale.zoom -= vari;
-            } else {
-                if (scale.zoom > 4.9) return;
-                scale.zoom += vari;
-            }
-            posv = 1 / scale.zoom;
-            w = cw * posv;
-            h = ch * posv;
-            nx = cx * posv;
-            ny = cy * posv;
-            var dx = px - nx;
-            var dy = py - ny;
-            x += dx;
-            y += dy;
-            scale.w = w;
-            scale.h = h;
-            scale.x = x;
-            scale.y = y;
-            that.setViewBox(scale.x, scale.y, scale.w, scale.h, false);
         }
     }
     R.el.draggable = function (move, start, up) {
@@ -130,4 +106,35 @@
         }
         return this.drag(onMove, onStart, onUp);
     };
+    function drag(e, oDiv, that) {
+        var disX = e.offsetX;
+        var disY = e.offsetY;
+        document.onmousemove = function (evt) {
+            var e = evt || window.event;
+            var left = e.pageX - disX;
+            var top = e.pageY - disY;
+            if (that._draging) {
+                return
+            }
+            oDiv.style.left = left + 'px';
+            oDiv.style.top = top + 'px';
+        }
+        document.onmouseup = function () {
+            document.onmousemove = null;
+        }
+        document.ondragstart = function () {
+            return false;
+        }
+    }
+    function offset(elem){
+        var o = {};
+        o.left = elem.offsetLeft;
+        o.top= elem.offsetTop;
+        while(elem.offsetParent){
+            elem = elem.offsetParent;
+            o.left += elem.offsetLeft;
+            o.top += elem.offsetTop;
+        }
+        return o;
+    }
 })(Raphael);
