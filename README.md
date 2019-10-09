@@ -1,11 +1,11 @@
 ﻿## raphael.draggable.js
 - raphael.js扩展拖拽功能。画布整体拖动，滚轮缩放，还原，以及单独元素拖动
 ## 使用方式：
-```
+```html
 <div id="container"></div>
 ```
 
-```
+```javascript
 <script src="raphael.min.js"></script>
 <script src="raphael.draggable.js"></script>
 <script type="text/javascript">
