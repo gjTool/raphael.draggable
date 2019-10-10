@@ -4,6 +4,11 @@
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
     <meta content="utf-8" http-equiv="encoding">
     <title>Raphael Dev testing html</title>
+    <style>
+    #container {
+        overflow: hidden;
+    }
+    </style>
 </head>
 
 <body>
@@ -19,6 +24,7 @@
             text.attr({
                 "font-size": "30px"
             });
+            paper.zoomEnable()
             //画布背景整体拖动
             paper.draggable()
             text.click(function () {
@@ -26,9 +32,9 @@
                 paper.reset()
             })
             //单独元素拖动
-            // circle.draggable()
-            // text.draggable()
-            paper.zoomEnable()
+            circle.draggable()
+            text.draggable()
+      
         };
     </script>
 </body>

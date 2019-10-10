@@ -5,13 +5,14 @@
         scale.h = oDiv.height.baseVal.value;
         scale.x = 0;
         scale.y = 0;
-        oDiv.style.left = '0';
-        oDiv.style.top = '0';
+        oDiv.style.transform = "translate(0px,0px)"
         scale.vari = 0.02;
         scale.zoom = 1;
         this._scale = scale;
+        
         this.setViewBox(scale.x, scale.y, scale.w, scale.h, false);
     }
+    R.prototype._draging = false;
     R.prototype._scale = { vari: 0.1, zoom: 1, w: 0, h: 0, x: 0, y: 0,maxZoom:6,minZoom:0.5 };
     R.prototype.zoomEnable = function () {
         var oDiv = this.canvas, scale = this._scale, that = this;
@@ -23,8 +24,16 @@
             var w = scale.w, h = scale.h, x = scale.x, y = scale.y;
             var vari = scale.vari - 0;
             e = e || window.event;
-            var cx = e.clientX - offset($svgTest).left - parseFloat(oDiv.style.left) ;
-            var cy = e.clientY - offset($svgTest).top - parseFloat(oDiv.style.top);
+            var  translate = oDiv.style.transform;
+            if(translate){
+               var str = translate.match(/translate\((.*)\)/)[1];
+                str = str.split(",");
+                var cx = e.clientX - offset($svgTest).left - parseFloat(str[0]);
+                var cy = e.clientY - offset($svgTest).top - parseFloat(str[1]);
+            }else {
+                var cx = e.clientX - offset($svgTest).left;
+                var cy = e.clientY - offset($svgTest).top;
+            }
             var dtl = e.wheelDelta ?  e.wheelDelta : e.detail;
             var px, py, nx, ny;
             var posv = 1 / scale.zoom;
@@ -116,8 +125,7 @@
             if (that._draging) {
                 return
             }
-            oDiv.style.left = left + 'px';
-            oDiv.style.top = top + 'px';
+            oDiv.style.transform = "translate("+left+"px,"+top+"px)"
         }
         document.onmouseup = function () {
             document.onmousemove = null;
