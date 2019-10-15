@@ -12,39 +12,396 @@
 </head>
 
 <body>
-    <div id="container"></div>
+    <div id="button">定位</div>
+    <div id="svgTest" style="width: 50%;height:800px;position:relative;float:right;border:1px solid #999;"></div>
+    <script src="jquery-1.11.3.min.js"></script>
     <script src="raphael.min.js"></script>
-    <script src="raphael.draggable.js"></script>
+    <script src="raphael.draggable1.js"></script>
     <script>
-        window.onload = function () {
-            var paper = new Raphael('container', 500, 500);
-            paper.zoomEnable()
-            var dice = paper.set();
+        $(function () {
+            var paper = Raphael('svgTest'), diceData = paper.set(), objArr;
+            var width = paper.width, height = paper.height;
+            var moveX = width / 2, moveY = height / 2;
+            moveX = 0;
+            // moveY = 0;
+            paper.zoomEnable();
 
-            dice.push(paper.circle(100, 100, 100).attr({ 'fill': '270-#FAE56B:0-#E56B6B:100' }))
-            var text = paper.text(400, 50, "我是被绘制出来的图片")
-            text.attr({
-                "font-size": "30px"
-            });
-            dice.push(text)
+            $.ajax({
+                url: "",
+                type: "get",
+                data: {
+                    "namelist": ""
+                },
+                success: function (res) {
+                    if (res.state === "SUCCESS" && res.data.length) {
+                        objArr = res.data;
+                        $.ajax({
+                            url: "",
+                            type: "get",
+                            data: {
+                                "projectId": "888"
+                            },
+                            success: function (res) {
+                                if (res.state === "SUCCESS" && res.data.length) {
+                                    var data = res.data;
+                                    $.each(data, function (a, item) {
 
-            dice.push(paper.rect(10, 10, 60, 60, 4).attr('fill', '#FFF'));
-            dice.push(paper.circle(22, 58, 5).attr('fill', '#000'));
-            dice.push(paper.circle(58, 22, 5).attr('fill', '#000'));
-            dice.push(paper.circle(40, 40, 5).attr('fill', '#000'));
-            dice.push(paper.circle(22, 22, 5).attr('fill', '#000'));
-            dice.push(paper.circle(58, 59, 5).attr('fill', '#000'));
-            dice.push(paper.circle(58, 59, 5).attr('fill', '#000'));
+                                        var busList = item.busList, lineList = item.lineList, symboList = item.symboList;
+                                        if (busList && busList.length) {
+                                            $.each(busList, function (b, item2) {
+                                                drawMainLine(item2, "#4cae4c", 0.5)
+                                            })
+                                        }
+                                        if (lineList && lineList.length) {
+                                            $.each(lineList, function (b, item2) {
+                                                drawLine(item2, "#666", 0.5)
+                                            })
+                                        }
+                                        if (symboList && symboList.length) {
+                                            $.each(busList, function (b, item2) {
+                                                drawImg(item2)
+                                            })
+                                        }
+                                    })
+                                }
+                            }
+                        })
+                    }
+                }
+            })
+
+            $("#button").on("click", function () {
+                selectSvgImg("xxxxxxx")
+            })
+            //选中svg的图元
+            function selectSvgImg(symbolCode) {
+                diceData.forEach(function (item) {
+                    var data = item.data("data");
+                    if (data) {
+                        if (data.symbolCode && data.symbolCode.indexOf(symbolCode) != -1) {
+                            diceData.forEach(function (item3) {
+                                var rect = item3.data("rect");
+                                if (rect) {
+                                    rect.node.style.display = "none";
+                                }
+
+                            })
+                            var rect2 = item.data("rect");
+                            if (rect2) {
+                                rect2.node.style.display = "block";
+                            }
+                            //缩放svg
+                            zoomSvg(4)
+
+                            var x2 = -(item.attrs.x - paper._scale.w / 2 - paper._scale.x);
+                            var y2 = -(item.attrs.y - paper._scale.h / 2 - paper._scale.y);
+
+                            diceData.forEach(function (item2) {
+                                var mytransform = item2.data("mytransform");
+                                var str = "T" + x2 + "," + y2;
+                                for (var i = 0; i < mytransform.length; i++) {
+                                    if (mytransform[i][0] != "T") {
+                                        var arr = mytransform[i];
+                                        for (var j = 0; j < arr.length; j++) {
+                                            if (j === 0 || j === arr.length - 1) {
+                                                str += arr[j]
+                                            } else {
+                                                str += arr[j] + ","
+                                            }
+                                        }
+                                    }
+                                }
+
+                                item2.transform(str);
+
+                            })
+                        }
+                    }
+                });
+            }
+
+            //缩放svg
+            function zoomSvg(zoom) {
+                var $svgTest = $(paper.canvas).parent()[0], scale = paper._scale;
+                var cw = paper.canvas.width.baseVal.value, ch = paper.canvas.height.baseVal.value;
+                var w = scale.w, h = scale.h, x = scale.x, y = scale.y;
+                var cx = cw / 2;
+                var cy = ch / 2;
+                var py, py, nx, ny;
+                var posv = 1 / scale.zoom;
+                px = cx * posv;
+                py = cy * posv;
+                if (zoom >= scale.maxZoom) {
+                    scale.zoom = scale.maxZoom
+                } else if (zoom <= scale.minZoom) {
+                    scale.zoom = scale.minZoom
+                } else {
+                    scale.zoom = zoom;
+                }
+                posv = 1 / scale.zoom;
+                w = cw * posv;
+                h = ch * posv;
+                nx = cx * posv;
+                ny = cy * posv;
+                var dx = px - nx;
+                var dy = py - ny;
+                x += dx;
+                y += dy;
+                scale.w = w;
+                scale.h = h;
+                scale.x = x;
+                scale.y = y;
+                paper.setViewBox(scale.x, scale.y, scale.w, scale.h, false);
+                paper._scale = scale;
+
+            }
+
             //画布整体拖拽 - 拖拽所有元素，以达到拖拽画布整体的效果
-            dice.drag(function (dx, dy, x, y, e) {
-                dice.transform(this.data('mytransform') + 'T' + dx + ',' + dy);
-            }, function (x, y, e) {
-                dice.data('mytransform', this.transform());
-            }, function (e) {
-                dice.data('mytransform', this.transform());
-            });
 
-        }
+            paper.canvas.onmousedown = function (evt) {
+                var e = evt || window.event;
+                var x1 = e.clientX;
+                var y1 = e.clientY;
+                var x2 = 0;
+                var y2 = 0;
+                diceData.forEach(function (item) {
+                    item.data("mytransform", item.transform())
+                })
+                document.onmousemove = function (evt) {
+                    var e = evt || window.event;
+                    var x2 = e.clientX - x1;
+                    var y2 = e.clientY - y2;
+                    var scale = 1 / paper._scale.zoom;
+                    diceData.forEach(function (item) {
+                        item.transform(item.data("mytransform") + "T" + x2 * scale + "," + y2 * scale)
+                    })
+                }
+                document.onmouseup = function (evt) {
+                    diceData.forEach(function (item) {
+                        item.data("mytransform", item.transform())
+                    })
+                    document.onmousemove = null;
+                }
+                document.ondragstart = function () {
+                    return false;
+                }
+            }
+            //画主接线
+            function drawMainLine(item, color, width) {
+                var lineCoordinateS = item.lineCoordinateS,
+                    lineCoordinateE = item.lineCoordinateE;
+                var p1 = lineCoordinateS.split(","), p3 = lineCoordinateE.split(","), x = 0, y = 0;
+                if (parseFloat(p1[0]) > parseFloat(p3[0])) {
+                    x = moveX + parseFloat(p3[0]);
+                    y = moveY + (-parseFloat(p3[1])) - width * 2;
+                } else {
+                    x = moveX + parseFloat(p1[0]);
+                    y = moveY + (-parseFloat(p1[1])) - width * 2;
+                }
+
+                var w = Math.abs(parseFloat(p1[0]) - parseFloat(p3[0])),
+                    h = width * 5;
+                var rect = paper.rect(x, y, w, h).attr({
+                    "stroke": color,
+                    "stroke-width": width,
+                    "title": "主线"
+                });
+                rect.data("mytransform", rect.transform())
+                diceData.push(rect)
+            }
+            //画线条
+            function drawLine(item, color, width) {
+                var lineCoordinateS = item.lineCoordinateS,
+                    inflectionPoint = item.inflectionPoint,
+                    lineCoordinateE = item.lineCoordinateE;
+                var p1 = lineCoordinateS.split(","), p3 = lineCoordinateE.split(",");
+                var path = "M";
+                if (p1 && p1.length) {
+                    path += (moveX + parseFloat(p1[0]) + "," + (moveY + (-parseFloat(p1[1]))))
+                }
+                if (inflectionPoint) {
+                    var arr = inflectionPoint.split(";");
+                    for (var i = 0; i < arr.length; i++) {
+                        var p2 = arr[i].split(",");
+                        path += "L" + (moveX + parseFloat(p2[0]) + "," + (moveY + (-parseFloat(p2[1]))))
+                    }
+                }
+                if (p3 && p3.length) {
+                    path += "L" + (moveX + parseFloat(p3[0]) + "," + (moveY + (-parseFloat(p3[1]))))
+                }
+                // path += "Z"; //闭合，变成三角形
+                if (!color) {
+                    color = "#8c8c8c"
+                }
+                if (!width) {
+                    width = 1
+                }
+                line.data("mytransform", line.transform());
+                diceData.push(line)
+            }
+
+            //根据属性获取img路径
+            function getImgObj(name) {
+                for (var i = 0; i < objArr.length; i++) {
+                    if (name === objArr[i].name) {
+                        return objArr[i]
+                    }
+                }
+            }
+            //画图元
+            function drawImg(item) {
+                var symbolCoordinate = item.symbolCoordinate,
+                    symbolRatio = item.symbolRatio,
+                    symbolRotation = item.symbolRotation;
+                var p = symbolCoordinate.split(",");
+                if (!objArr.length) {
+                    return
+                }
+                var obj = getImgObj(item.symbolName);
+                if (!obj) {
+                    return
+                }
+                var p2 = obj.xOffset, p3 = obj.yOffset;
+                var w = obj.width, h = obj.height,
+                    x = x1 = moveX + parseFloat(p[0]), y = y1 = moveY + (-parseFloat[p[1]]);
+                x = x - parseFloat(p2);
+                y = y - parseFloat(p3);
+
+                symbolRotation = parseFloat(symbolRotation);
+                symbolRotation = symbolRotation < 0 ? Math.ceil(symbolRotation) : Math.floor(symbolRotation);
+                if (isNaN(symbolRotation)) {
+                    symbolRotation = 0
+                }
+                symbolRatio = parseFloat(symbolRatio);
+                symbolRatio = symbolRatio < 0 ? Math.ceil(symbolRatio) : Math.floor(symbolRatio);
+                if (isNaN(symbolRatio)) {
+                    symbolRatio = 1
+                }
+
+                var img = paper.image("/formal/svg/" + item.symbolName + ".svg", x, y, w, h)
+                    .attr({
+                        "cursor": "pointer"
+                    })
+                    .rotate(-symbolRotation, x1, y1)
+                    .scale(symbolRatio)
+                    .data("data", {
+                        schId: item.schId,
+                        symbolCode: item.symbolCode,
+                        symbolLevel: item.symbolLevel,
+                        symbolName: item.symbolName,
+                        symbolMirror: item.symbolMirror,
+                        symbolRotation: -symbolRotation,
+                        symbolRatio: symbolRatio,
+                        w: w,
+                        h: h,
+                        x: x,
+                        y: y,
+                        x1: x1,
+                        y1: y1,
+                        p2: p2,
+                        p3: p3
+                    });
+                diceData.push(img);
+                rect = paper.rect(x, y, w, h)
+                    .attr({
+                        "stroke": "#00f",
+                        "stroke-width": 0.2
+                    })
+                    .rotate(-symbolRotation, x1, y1)
+                    .scale(symbolRatio)
+                    .data("data", {
+                        symbolRotation: -symbolRotation,
+                        symbolRatio: symbolRatio,
+                        w: w + 0.2 * 2,
+                        h: h + 0.2 * 2,
+                        x: x,
+                        y: y,
+                        x1: x1,
+                        y1: y1,
+                        p2: p2,
+                        p3: p3
+                    });
+
+                diceData.push(rect);
+                img.click(function (e) {
+                    var rect = this.data("rect");
+                    if (rect.node.style.display === "none") {
+                        diceData.forEach(function (item) {
+                            var rect2 = this.data("rect");
+                            if (rect2) {
+                                rect2.node.style.display = "none"
+                            }
+                        })
+                        rect.node.style.display = "block"
+                    } else {
+                        rect.node.style.display = "none"
+                    }
+                })
+                img.hover(function () {
+                    this.attr({
+                        opacity: "0.5"
+                    })
+                }, function () {
+                    this.attr({
+                        opacity: "1"
+                    })
+                })
+
+                var symbolMirror = item.symbolMirror;
+                //平移镜像翻转
+                translateScale(img, w, h, p2, p3, symbolMirror, symbolRotation, item);
+                translateScale(rect, w, h, p2, p3, symbolMirror, symbolRotation);
+                rect.node.style.display = "none"；
+                img.data("rect", rect)
+                img.data("mytransform", img.transform())
+                rect.data("mytransform", rect.transform())
+            }
+
+            //平移镜像翻转
+            function translateScale(img, w, h, p2, p3, symbolMirror, symbolRotation, item) {
+                if (symbolMirror) {
+                    var s = symbolMirror.split(","), s1 = parseFloat(s[0]), s2 = parseFloat(s[1]);
+                    s1 = s1 < 0 ? Math.ceil(s1) : Math.floor(s1);
+                    s2 = s2 < 0 ? Math.ceil(s2) : Math.floor(s2);
+                    if (s1 === 0 && s2 === -1) {
+                        if (symbolRotation == "270") {
+                            img.translate(0, -(h - 2 * p3)).scale(1, -1)  //x轴翻转 y负方向平移 向下翻转
+                        } else if (symbolRotation == "90") {
+                            img.translate(0, (h - 2 * p3)).scale(1, -1) //x轴翻转 y负方向平移 向下翻转
+                        } else if (symbolRotation == "180" || symbolRotation == "0") {
+                            img.translate(w - 2 * p2, 0).scale(-1, 1) //y轴翻转 x正方向平移 向右翻转
+                        }
+                    }
+                    if (s1 === 0 && s2 === 1) {
+                        if (symbolRotation == "270") {
+                            img.translate(0, h - 2 * p3).scale(1, -1)  //x轴翻转 y正方向平移 向上翻转
+                        } else if (symbolRotation == "90") {
+                            img.translate(0, -(h - 2 * p3)).scale(1, -1) //x轴翻转 y正方向平移 向上翻转
+                        } else if (symbolRotation == "180" || symbolRotation == "0") {
+                            img.translate(w - 2 * p2, 0).scale(-1, 1) //y轴翻转 x负方向平移 向左翻转
+                        }
+                    }
+                    if (s1 === 1 && s2 === 0) {
+                        if (symbolRotation == "270") {
+                            img.translate(-(w - 2 * p2), 0).scale(-1, 1) //y轴翻转 x正方向平移 向右翻转
+                        } else if (symbolRotation == "90") {
+                            img.translate(w - 2 * p2, 0).scale(-1, 1)//y轴翻转 x正方向平移 向右翻转
+                        } else if (symbolRotation == "180" || symbolRotation == "0") {
+                            img.translate(0, -(h - 2 * p3)).scale(1, -1)  //x轴翻转 y正方向平移 向上翻转
+                        }
+                    }
+                    if (s1 === -1 && s2 === 0) {
+                        if (symbolRotation == "270") {
+                            img.translate(w - 2 * p2, 0).scale(-1, 1) //y轴翻转 x负方向平移 向左翻转
+                        } else if (symbolRotation == "90") {
+                            img.translate(-(w - 2 * p2), 0).scale(-1, 1) //y轴翻转 x负方向平移 向左翻转
+                        } else if (symbolRotation == "180" || symbolRotation == "0") {
+                            img.translate(0, -(h - 2 * p3)).scale(1, -1) //x轴翻转 y负方向平移 向下翻转
+                        }
+                    }
+                }
+            }
+        })
 
     </script>
 </body>
